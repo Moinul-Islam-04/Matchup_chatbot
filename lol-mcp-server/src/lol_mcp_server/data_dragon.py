@@ -162,3 +162,88 @@ class DataDragonClient:
             if champ.get("key") == key_str:
                 return champ.get("name", key_str)
         return f"Champion {key_str}"
+
+    # --- item data ----------------------------------------------------------
+
+    async def get_item_index(self) -> dict[str, Any]:
+        """Full item.json index (stats, gold, build paths for every item)."""
+        version = await self.get_version()
+        locale = self._config.ddragon_locale
+        url = f"{DDRAGON_BASE}/cdn/{version}/data/{locale}/item.json"
+        return await self._get_json(url, f"item_index:{version}:{locale}")
+
+    def _resolve_item_id(self, index: dict[str, Any], item_name: str) -> str | None:
+        target = item_name.strip().lower()
+        squashed = "".join(c for c in target if c.isalnum())
+        if not squashed:
+            return None
+        data = index.get("data", {})
+
+        # Data Dragon ships per-game-mode variants under the same display name
+        # (e.g. an Arena "Eclipse" with no build path alongside the Summoner's
+        # Rift one). Collect every name match, then prefer the canonical SR,
+        # purchasable item with a real build path.
+        candidates: list[tuple[str, dict[str, Any]]] = []
+        for item_id, item in data.items():
+            name = item.get("name", "").lower()
+            if name == target or "".join(c for c in name if c.isalnum()) == squashed:
+                candidates.append((item_id, item))
+        if not candidates:
+            return None
+
+        def rank(pair: tuple[str, dict[str, Any]]) -> tuple[int, int, int, int]:
+            item_id, item = pair
+            on_sr = 1 if item.get("maps", {}).get("11") else 0
+            purchasable = 1 if item.get("gold", {}).get("purchasable") else 0
+            has_path = 1 if (item.get("from") or item.get("into")) else 0
+            # Mode-variant items use very large ids; prefer canonical low ids.
+            canonical = 1 if item_id.isdigit() and int(item_id) < 220000 else 0
+            return (on_sr, purchasable, has_path, canonical)
+
+        candidates.sort(key=rank, reverse=True)
+        return candidates[0][0]
+
+    async def get_item_detail(self, item_name: str) -> dict[str, Any] | None:
+        """Resolve an item by name and return its payload enriched with the
+        display names of its build-path components (``from``/``into`` are ids).
+
+        Returns ``None`` if the name cannot be resolved.
+        """
+        index = await self.get_item_index()
+        item_id = self._resolve_item_id(index, item_name)
+        if item_id is None:
+            return None
+        data = index.get("data", {})
+        item = dict(data[item_id])
+        item["_id"] = item_id
+        item["_from_names"] = [data[i]["name"] for i in item.get("from", []) if i in data]
+        item["_into_names"] = [data[i]["name"] for i in item.get("into", []) if i in data]
+        return item
+
+    # --- rune data ----------------------------------------------------------
+
+    async def get_runes(self) -> list[dict[str, Any]]:
+        """runesReforged.json — the rune trees (Precision, Domination, ...)."""
+        version = await self.get_version()
+        locale = self._config.ddragon_locale
+        url = f"{DDRAGON_BASE}/cdn/{version}/data/{locale}/runesReforged.json"
+        return await self._get_json(url, f"runes:{version}:{locale}")
+
+    async def find_rune(self, rune_name: str) -> dict[str, Any] | None:
+        """Find a single rune by name across all trees/slots. Returns the rune
+        dict plus its tree name and whether it's a keystone, or ``None``."""
+        query = "".join(c for c in rune_name.strip().lower() if c.isalnum())
+        if not query:
+            return None
+        trees = await self.get_runes()
+        for tree in trees:
+            for slot_idx, slot in enumerate(tree.get("slots", [])):
+                for rune in slot.get("runes", []):
+                    name = "".join(c for c in rune.get("name", "").lower() if c.isalnum())
+                    if name == query:
+                        return {
+                            **rune,
+                            "_tree": tree.get("name", ""),
+                            "_is_keystone": slot_idx == 0,
+                        }
+        return None

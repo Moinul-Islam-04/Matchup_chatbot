@@ -86,7 +86,9 @@ The client hosts the Claude chat loop and acts as the **MCP client**; the Python
 | Tool | Data source | Returns |
 |---|---|---|
 | `get_champion_info(champion_name)` | Data Dragon (public CDN — no API key) | Base stats + per-level growth, full ability kit with cooldowns/costs, and powerspike/matchup cues |
-| `get_live_match_context(summoner_name, tag_line)` | Riot Account-V1 → Spectator-V5 | Both teams' champions, the jungler (inferred via Smite), and bans for a player's current game |
+| `get_item_info(item_name)` | Data Dragon | Cost, build path (from/into), stats, and passive/active effects — keeps build advice patch-accurate |
+| `get_rune_info(rune_name)` | Data Dragon | A rune's tree, keystone status, and full effect text |
+| `get_live_match_context(summoner_name, tag_line)` | Riot Account-V1 → Spectator-V5 → League-V4 | Both teams' champions, each player's **ranked tier**, the jungler (inferred via Smite), and bans for a player's current game |
 
 ---
 

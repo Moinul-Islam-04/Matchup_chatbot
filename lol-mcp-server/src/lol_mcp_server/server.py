@@ -10,6 +10,7 @@ stay clean.
 
 from __future__ import annotations
 
+import asyncio
 import os
 
 from fastmcp import FastMCP
@@ -17,7 +18,13 @@ from fastmcp import FastMCP
 from .auth import StaticTokenVerifier
 from .config import Config
 from .data_dragon import DataDragonClient
-from .formatting import format_champion_info, format_live_match
+from .formatting import (
+    format_champion_info,
+    format_item_info,
+    format_live_match,
+    format_rank,
+    format_rune_info,
+)
 from .logging_setup import configure_logging, get_logger
 from .riot_api import RiotApiError, RiotClient
 
@@ -73,6 +80,52 @@ async def get_champion_info(champion_name: str) -> str:
 
 
 @mcp.tool
+async def get_item_info(item_name: str) -> str:
+    """Get an item's cost, build path, stats, and passive/active effects.
+
+    Use this when giving build advice so recommendations are grounded in the
+    item's real stats and gold cost on the current patch — e.g. "what does
+    Serylda's Grudge give and cost?" or to justify a build order.
+
+    Args:
+        item_name: Item name, e.g. "Eclipse", "Serylda's Grudge", "Plated
+            Steelcaps". Matched case/punctuation-insensitively.
+
+    Returns:
+        Markdown: total/combine cost, what it builds from and into, tags, and
+        its full stats and effects.
+    """
+    log.info("get_item_info(%r)", item_name)
+    item = await ddragon.get_item_detail(item_name)
+    if item is None:
+        return f"No item found matching '{item_name}'."
+    version = await ddragon.get_version()
+    return format_item_info(item, version)
+
+
+@mcp.tool
+async def get_rune_info(rune_name: str) -> str:
+    """Get a rune's tree, whether it's a keystone, and its full description.
+
+    Use this to ground rune advice in the rune's actual effect — e.g. "what
+    does Conqueror do?" or "is Grasp or Aftershock better here?".
+
+    Args:
+        rune_name: Rune name, e.g. "Conqueror", "Electrocute", "Grasp of the
+            Undying". Matched case/punctuation-insensitively.
+
+    Returns:
+        Markdown: the rune's name, its tree, keystone/minor classification, and
+        its full effect text.
+    """
+    log.info("get_rune_info(%r)", rune_name)
+    rune = await ddragon.find_rune(rune_name)
+    if rune is None:
+        return f"No rune found matching '{rune_name}'."
+    return format_rune_info(rune)
+
+
+@mcp.tool
 async def get_live_match_context(summoner_name: str, tag_line: str) -> str:
     """Get the live match a player is currently in: both teams' champions,
     players, and bans (via the Riot Spectator API).
@@ -89,8 +142,9 @@ async def get_live_match_context(summoner_name: str, tag_line: str) -> str:
         tag_line: the tagLine portion (after the '#'), e.g. "NA1", "KR1".
 
     Returns:
-        A markdown briefing of the live game grouped by team side, plus bans —
-        or a clear message if the player is not currently in a game.
+        A markdown briefing of the live game grouped by team side, with each
+        player's ranked tier and the jungler flagged, plus bans — or a clear
+        message if the player is not currently in a game.
     """
     log.info("get_live_match_context(%r, %r)", summoner_name, tag_line)
     try:
@@ -108,7 +162,32 @@ async def get_live_match_context(summoner_name: str, tag_line: str) -> str:
         for k in keys
         if isinstance(k, int) and k > 0
     }
-    return format_live_match(game, name_by_key, queried_puuid=puuid)
+
+    # Enrich each player with their ranked tier (League-V4) — concurrent and
+    # best-effort, so a slow/failed lookup never breaks the briefing.
+    rank_by_puuid: dict[str, str] = {}
+    puuids = [p["puuid"] for p in game.get("participants", []) if p.get("puuid")]
+
+    async def _fetch_rank(pid: str) -> None:
+        try:
+            entries = await riot.get_league_entries_by_puuid(pid)
+        except RiotApiError:
+            return
+        solo = next((e for e in entries if e.get("queueType") == "RANKED_SOLO_5x5"), None)
+        entry = solo or next(
+            (e for e in entries if e.get("queueType") == "RANKED_FLEX_SR"), None
+        )
+        if entry:
+            label = format_rank(entry)
+            if entry is not solo:
+                label += " (Flex)"
+            rank_by_puuid[pid] = label
+
+    await asyncio.gather(*(_fetch_rank(pid) for pid in puuids))
+
+    return format_live_match(
+        game, name_by_key, queried_puuid=puuid, rank_by_puuid=rank_by_puuid
+    )
 
 
 def main() -> None:

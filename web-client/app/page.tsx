@@ -7,6 +7,8 @@ type Msg = { role: "user" | "assistant"; content: string };
 
 const TOOL_LABELS: Record<string, string> = {
   get_champion_info: "Looking up champion data",
+  get_item_info: "Looking up item data",
+  get_rune_info: "Looking up rune data",
   get_live_match_context: "Checking the live match",
 };
 

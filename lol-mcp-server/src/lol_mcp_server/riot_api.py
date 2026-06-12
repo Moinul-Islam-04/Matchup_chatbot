@@ -98,3 +98,15 @@ class RiotClient:
                 "That summoner is not currently in a live game "
                 "(or the game just started/ended)."
             ) from None
+
+    async def get_league_entries_by_puuid(self, puuid: str) -> list[dict[str, Any]]:
+        """Ranked league entries (solo + flex) for a PUUID via League-V4.
+
+        A 404 means the player is unranked; we return an empty list rather than
+        raising so live-match enrichment degrades gracefully.
+        """
+        path = f"/lol/league/v4/entries/by-puuid/{puuid}"
+        try:
+            return await self._get(self._config.riot_platform_host, path)
+        except RiotNotFoundError:
+            return []

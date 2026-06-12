@@ -7,8 +7,10 @@ for use by a Claude-powered chatbot companion.
 
 | Tool | Status | Description |
 |------|--------|-------------|
-| `get_champion_info(champion_name)` | ✅ Phase 1 | Base stats, abilities, powerspike/matchup context (Data Dragon — no API key needed) |
-| `get_live_match_context(summoner_name, tag_line)` | ✅ Phase 1 | Current match teams, champions & bans by Riot ID (Riot Spectator API — needs `RIOT_API_KEY`) |
+| `get_champion_info(champion_name)` | ✅ | Base stats, abilities, powerspike/matchup context (Data Dragon — no API key needed) |
+| `get_item_info(item_name)` | ✅ | Cost, build path, stats, and effects (Data Dragon) |
+| `get_rune_info(rune_name)` | ✅ | Tree, keystone status, and effect text (Data Dragon) |
+| `get_live_match_context(summoner_name, tag_line)` | ✅ | Current match teams, champions & bans by Riot ID (Riot Spectator API — needs `RIOT_API_KEY`) |
 
 ## Setup
 

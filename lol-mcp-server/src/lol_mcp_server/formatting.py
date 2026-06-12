@@ -127,11 +127,27 @@ _TEAM_LABELS = {100: "Blue side", 200: "Red side"}
 # payload — a Smite-holder is the jungler. No other lane is inferable.
 _SMITE_SPELL_ID = 11
 
+# Apex tiers have no division (always "I") — show tier + LP only.
+_APEX_TIERS = {"MASTER", "GRANDMASTER", "CHALLENGER"}
+
+
+def format_rank(entry: dict[str, Any]) -> str:
+    """Format a League-V4 entry as e.g. 'Diamond II · 45 LP' or 'Master · 210 LP'."""
+    tier = entry.get("tier", "")
+    if not tier:
+        return ""
+    name = tier.capitalize()
+    lp = entry.get("leaguePoints", 0)
+    if tier in _APEX_TIERS:
+        return f"{name} · {lp} LP"
+    return f"{name} {entry.get('rank', '')} · {lp} LP"
+
 
 def format_live_match(
     game: dict[str, Any],
     champ_name_by_key: dict[int, str],
     queried_puuid: str | None = None,
+    rank_by_puuid: dict[str, str] | None = None,
 ) -> str:
     """Render a Spectator-V5 active-game payload as an LLM-friendly briefing.
 
@@ -139,7 +155,9 @@ def format_live_match(
         game: raw Spectator-V5 ``active-games`` response.
         champ_name_by_key: numeric championId -> display name (resolved upstream).
         queried_puuid: if provided, the queried player is marked with "(you)".
+        rank_by_puuid: optional puuid -> formatted ranked tier (e.g. "Diamond II").
     """
+    rank_by_puuid = rank_by_puuid or {}
     queue_id = game.get("gameQueueConfigId")
     queue = _QUEUE_NAMES.get(queue_id, f"Queue {queue_id}")
     mode = game.get("gameMode", "")
@@ -175,7 +193,9 @@ def format_live_match(
             spells = (p.get("spell1Id"), p.get("spell2Id"))
             role = "  _(Jungle — has Smite)_" if _SMITE_SPELL_ID in spells else ""
             you = "  `<-- asked about`" if queried_puuid and p.get("puuid") == queried_puuid else ""
-            lines.append(f"- **{champ}**{role} — {riot_id}{you}")
+            rank = rank_by_puuid.get(p.get("puuid", ""))
+            rank_str = f"  ·  {rank}" if rank else ""
+            lines.append(f"- **{champ}**{role} — {riot_id}{rank_str}{you}")
 
     # Bans, if present, are useful matchup context.
     bans = game.get("bannedChampions") or []
@@ -188,4 +208,51 @@ def format_live_match(
         if banned:
             lines += ["", "## Bans", banned]
 
+    return "\n".join(lines)
+
+
+def format_item_info(item: dict[str, Any], version: str) -> str:
+    """Render a Data Dragon item payload (enriched with build-path names)."""
+    name = item.get("name", "?")
+    gold = item.get("gold", {})
+    total = gold.get("total", 0)
+    combine = gold.get("base", 0)
+    tags = ", ".join(item.get("tags", []))
+    plaintext = item.get("plaintext", "")
+    # The description carries stats + passives in markup; flatten it.
+    desc = _strip_tags(item.get("description", ""))
+
+    lines = [
+        f"# {name} — {total}g  (patch {version})",
+    ]
+    from_names = item.get("_from_names") or []
+    into_names = item.get("_into_names") or []
+    if from_names:
+        lines.append(f"**Builds from:** {', '.join(from_names)}  (+{combine}g combine)")
+    if into_names:
+        lines.append(f"**Builds into:** {', '.join(into_names)}")
+    if tags:
+        lines.append(f"**Tags:** {tags}")
+    if plaintext:
+        lines += ["", f"_{plaintext}_"]
+    if desc:
+        lines += ["", "## Stats & effects", desc]
+    return "\n".join(lines)
+
+
+def format_rune_info(rune: dict[str, Any]) -> str:
+    """Render a single rune (keystone or minor) with its tree and description."""
+    name = rune.get("name", "?")
+    tree = rune.get("_tree", "")
+    kind = "Keystone" if rune.get("_is_keystone") else "Minor rune"
+    long_desc = _strip_tags(rune.get("longDesc", ""))
+    short_desc = _strip_tags(rune.get("shortDesc", ""))
+
+    lines = [
+        f"# {name}",
+        f"**{kind}** in the **{tree}** tree",
+    ]
+    body = long_desc or short_desc
+    if body:
+        lines += ["", body]
     return "\n".join(lines)
