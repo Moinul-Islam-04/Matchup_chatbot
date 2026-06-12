@@ -26,6 +26,24 @@ uv run lol-mcp-server
 
 The server speaks the MCP **stdio** transport: JSON-RPC on stdout, logs on stderr.
 
+## Run (Streamable HTTP — for deployment)
+
+```powershell
+$env:MCP_TRANSPORT="http"; $env:PORT="8000"; uv run lol-mcp-server
+# → MCP endpoint at http://0.0.0.0:8000/mcp/
+```
+
+Or via Docker (used for Render/Railway/Fly):
+
+```bash
+docker build -t lol-mcp-server .
+docker run -e RIOT_API_KEY=RGAPI-... -p 8000:8000 lol-mcp-server
+```
+
+`MCP_TRANSPORT` selects the transport (`stdio` default, `http` for deployment);
+`HOST`/`PORT`/`MCP_PATH` configure the HTTP listener (`PORT` falls back to the
+platform's injected `$PORT`). HTTP mode is stateless.
+
 ## Inspect (Phase 2)
 
 ```powershell

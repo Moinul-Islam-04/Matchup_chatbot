@@ -1,15 +1,20 @@
 import path from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type Anthropic from "@anthropic-ai/sdk";
 
 /**
- * Singleton MCP client connected to the LoL MCP server over stdio.
+ * Singleton MCP client connected to the LoL MCP server.
  *
- * We spawn the Python server (`uv run lol-mcp-server`) as a child process and
- * speak JSON-RPC over its stdin/stdout. The connection is cached on globalThis
- * so Next.js's dev-mode module reloads don't spawn a new Python process on
- * every request.
+ * Two transports, chosen by env:
+ *   - LOL_MCP_URL set  → connect over Streamable HTTP to a hosted server
+ *     (the deployment path: client and server run as separate services).
+ *   - otherwise        → spawn `uv run lol-mcp-server` as a child process and
+ *     speak JSON-RPC over its stdin/stdout (the local-dev path).
+ *
+ * The connection is cached on globalThis so Next.js's dev-mode module reloads
+ * don't reconnect (or respawn the Python process) on every request.
  */
 
 type McpGlobal = { lolMcpClient?: Promise<Client> };
@@ -23,6 +28,20 @@ export function getMcpClient(): Promise<Client> {
 }
 
 async function connect(): Promise<Client> {
+  const client = new Client(
+    { name: "lol-web-client", version: "0.1.0" },
+    { capabilities: {} },
+  );
+
+  const url = process.env.LOL_MCP_URL;
+  if (url) {
+    // Hosted server over Streamable HTTP.
+    const transport = new StreamableHTTPClientTransport(new URL(url));
+    await client.connect(transport);
+    return client;
+  }
+
+  // Local dev: spawn the Python server over stdio.
   const serverDir = path.resolve(
     process.cwd(),
     process.env.LOL_MCP_DIR ?? "../lol-mcp-server",
@@ -38,11 +57,6 @@ async function connect(): Promise<Client> {
     // (loaded by the Python process) are available; stderr is surfaced for logs.
     stderr: "inherit",
   });
-
-  const client = new Client(
-    { name: "lol-web-client", version: "0.1.0" },
-    { capabilities: {} },
-  );
   await client.connect(transport);
   return client;
 }

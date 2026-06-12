@@ -31,7 +31,8 @@ Copy-Item .env.local.example .env.local   # then fill in ANTHROPIC_API_KEY
 
 `.env.local` keys:
 - `ANTHROPIC_API_KEY` — required.
-- `LOL_MCP_COMMAND` / `LOL_MCP_ARGS` — how to launch the server (default `uv run lol-mcp-server`). On Windows, use the absolute `uv.exe` path if the spawn can't resolve `uv` from PATH.
+- `LOL_MCP_URL` — **deployment:** URL of a hosted Streamable HTTP MCP server (e.g. `https://…/mcp/`). If set, the client connects over HTTP and the stdio settings below are ignored.
+- `LOL_MCP_COMMAND` / `LOL_MCP_ARGS` — **local dev:** how to launch the server over stdio (default `uv run lol-mcp-server`). On Windows, use the absolute `uv.exe` path if the spawn can't resolve `uv` from PATH.
 - `LOL_MCP_DIR` — path to the Python server (default `../lol-mcp-server`).
 
 ## Run

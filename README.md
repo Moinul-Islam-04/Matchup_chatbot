@@ -142,6 +142,31 @@ The client launches the Python server automatically over stdio — you don't run
 
 ---
 
+## ☁️ Deployment
+
+The server supports **two transports**, chosen by the `MCP_TRANSPORT` env var, so the same code runs locally and in the cloud:
+
+| Mode | Transport | Used for |
+|---|---|---|
+| `stdio` (default) | JSON-RPC over stdin/stdout | Local dev — the client spawns the server as a child process |
+| `http` | Streamable HTTP | Deployment — server runs as its own service |
+
+**Deploy the server** (Render / Railway / Fly / any container host) from the included [Dockerfile](lol-mcp-server/Dockerfile):
+- Set `RIOT_API_KEY` as an environment variable on the host (never baked into the image).
+- The platform's injected `$PORT` is picked up automatically; the MCP endpoint is served at `/mcp/`.
+
+**Point the client at it** — set one env var in the web client and the stdio spawn is bypassed:
+
+```bash
+LOL_MCP_URL=https://your-mcp-server.onrender.com/mcp/
+```
+
+The Next.js client itself deploys anywhere that runs Node (Vercel, etc.) — once it talks to the server over HTTP it no longer needs `child_process`, so it's serverless-friendly. Set `ANTHROPIC_API_KEY` and `LOL_MCP_URL` in the host's env.
+
+> The hosted HTTP server is **stateless** (no session affinity) so it scales horizontally behind a load balancer. For a public deployment, add authentication in front of it — FastMCP supports auth providers — so you're not exposing an open endpoint that consumes your Riot rate limits.
+
+---
+
 ## ⚠️ Known limitations
 
 - **No lane assignments in live games.** Riot's Spectator API returns champions and teams but *not* who's top/mid/bot. The companion infers only the **jungler** (via Smite) and asks you which lane you're in rather than guessing — so it won't mislabel an off-meta pick (e.g. Veigar bot).
@@ -155,7 +180,7 @@ The client launches the Python server automatically over stdio — you don't run
 - [x] Phase 2 — MCP Inspector testing
 - [x] Phase 3 — Next.js chat client (Claude loop + MCP over stdio)
 - [x] Markdown rendering in chat bubbles
-- [ ] Phase 4 — Refactor server to **Streamable HTTP** MCP for cloud deployment (Render/Railway/Vercel)
+- [x] Phase 4 — Server runs as a **Streamable HTTP** MCP server for cloud deployment
 - [ ] Optional `lane` hint to skip the "which lane?" step
 - [ ] Counter-stats / win-rate tool
 

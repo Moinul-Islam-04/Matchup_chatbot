@@ -100,9 +100,38 @@ async def get_live_match_context(summoner_name: str, tag_line: str) -> str:
 
 
 def main() -> None:
-    """Console-script entrypoint. Runs the server over stdio."""
-    log.info("starting lol-mcp-server (stdio)")
-    mcp.run()  # defaults to stdio transport
+    """Console-script entrypoint.
+
+    Transport is chosen by env so the same code runs locally over stdio (for the
+    MCP Inspector and the local Next.js client) and as a hosted Streamable HTTP
+    server in the cloud:
+
+      MCP_TRANSPORT=stdio   (default) — JSON-RPC over stdin/stdout
+      MCP_TRANSPORT=http              — Streamable HTTP server for deployment
+
+    On HTTP, HOST/PORT/MCP_PATH are configurable; PORT also falls back to the
+    platform-provided ``$PORT`` (Render/Railway/etc.).
+    """
+    import os
+
+    transport = os.getenv("MCP_TRANSPORT", "stdio").lower()
+
+    if transport == "stdio":
+        log.info("starting lol-mcp-server (stdio)")
+        mcp.run()
+        return
+
+    if transport in ("http", "streamable-http"):
+        host = os.getenv("HOST", "0.0.0.0")
+        port = int(os.getenv("PORT", "8000"))
+        path = os.getenv("MCP_PATH", "/mcp/")
+        log.info("starting lol-mcp-server (http) on %s:%s%s", host, port, path)
+        # Stateless: each request is independent (no session affinity), which is
+        # the robust choice behind load balancers / serverless platforms.
+        mcp.run(transport="http", host=host, port=port, path=path, stateless_http=True)
+        return
+
+    raise SystemExit(f"Unknown MCP_TRANSPORT: {transport!r} (use 'stdio' or 'http')")
 
 
 if __name__ == "__main__":
