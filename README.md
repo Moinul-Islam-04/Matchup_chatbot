@@ -1,8 +1,22 @@
 # 🎮 LoL Companion
 
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen?style=flat-square)](https://lol-web-client.onrender.com)
+[![CI](https://img.shields.io/github/actions/workflow/status/Moinul-Islam-04/Matchup_chatbot/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/Moinul-Islam-04/Matchup_chatbot/actions/workflows/ci.yml)
+
 A real-time **League of Legends chatbot companion**. Ask context-aware questions before or during a live game — *"I'm Graves vs Diana jungle, when does she powerspike and what should I build?"* — and get advice grounded in **real champion data and your live match**, not the model's memory.
 
 Built on a decentralized **Model Context Protocol (MCP)** architecture: a Python MCP server wraps the Riot API + Data Dragon, and a Next.js chat client runs a Claude tool-use loop that calls those tools to answer.
+
+## ▶️ Try it live
+
+### **[lol-web-client.onrender.com](https://lol-web-client.onrender.com)**
+
+> Hosted free on Render — if it's been idle, the **first request takes ~30–60s** to wake the server, then it's responsive. Champion/matchup questions work anytime; live-game questions need a real match in progress (any region).
+
+Ask it something like:
+- *"I'm Graves vs Diana jungle — when does she spike and what do I build?"*
+- *"What's Thresh's hook cooldown and main engage combo?"*
+- *"Who is `Faker#KR1` playing against right now?"*
 
 ---
 
