@@ -153,11 +153,12 @@ The server supports **two transports**, chosen by the `MCP_TRANSPORT` env var, s
 
 ### One-click on Render (both services)
 
-The repo ships a [`render.yaml`](render.yaml) Blueprint. In the Render dashboard: **New ▸ Blueprint ▸** connect this repo. It provisions both services and prompts for the two secrets:
+The repo ships a [`render.yaml`](render.yaml) Blueprint. In the Render dashboard: **New ▸ Blueprint ▸** connect this repo. It provisions both services and prompts for the secrets:
 - `RIOT_API_KEY` (on the MCP server)
 - `ANTHROPIC_API_KEY` (on the client)
+- `LOL_MCP_URL` (on the client) — set this **once, after the server's first deploy**, to the server's public URL **plus `/mcp/`**, e.g. `https://lol-mcp-server-xxxx.onrender.com/mcp/`.
 
-The client is **auto-wired** to the server — Render injects the server's hostname as `LOL_MCP_HOST` and the client builds `https://<host>/mcp/` from it. No manual URL copying.
+The bearer token is **auto-wired** — Render generates `MCP_AUTH_TOKEN` on the server and copies it to the client as `LOL_MCP_TOKEN`. (The server's URL can't be auto-wired: Render's `fromService` only exposes the *internal* service name, not the public hostname — hence the one manual `LOL_MCP_URL` step.)
 
 ### Manual / other hosts
 

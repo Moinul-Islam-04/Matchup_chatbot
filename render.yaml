@@ -35,13 +35,12 @@ services:
     envVars:
       - key: ANTHROPIC_API_KEY
         sync: false
-      # Auto-wired: Render injects the server's hostname; the client builds
-      # https://<host>/mcp/ from it (see lib/mcp.ts).
-      - key: LOL_MCP_HOST
-        fromService:
-          type: web
-          name: lol-mcp-server
-          property: host
+      # Render's fromService `host` returns the INTERNAL service name (e.g.
+      # "lol-mcp-server"), not the public FQDN — so the public URL can't be
+      # auto-built. Set this once, after the server's first deploy, to:
+      #   https://<your lol-mcp-server URL>/mcp/   (note the trailing /mcp/)
+      - key: LOL_MCP_URL
+        sync: false
       # Auto-wired: the shared bearer token, copied from the server's generated
       # MCP_AUTH_TOKEN. Sent as Authorization: Bearer on every MCP request.
       - key: LOL_MCP_TOKEN
