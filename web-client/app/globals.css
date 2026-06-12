@@ -100,6 +100,59 @@ body {
   border-bottom-left-radius: 4px;
 }
 
+/* Markdown rendering inside assistant bubbles */
+.bubble.markdown {
+  white-space: normal;
+}
+
+.bubble.markdown > :first-child {
+  margin-top: 0;
+}
+
+.bubble.markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.bubble.markdown h1,
+.bubble.markdown h2,
+.bubble.markdown h3 {
+  font-size: 15px;
+  margin: 14px 0 6px;
+  color: var(--accent);
+  letter-spacing: 0.2px;
+}
+
+.bubble.markdown p {
+  margin: 8px 0;
+}
+
+.bubble.markdown ul,
+.bubble.markdown ol {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+
+.bubble.markdown li {
+  margin: 3px 0;
+}
+
+.bubble.markdown strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.bubble.markdown code {
+  background: #0a0e14;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 13px;
+}
+
+.bubble.markdown a {
+  color: var(--user);
+}
+
 .tool {
   align-self: flex-start;
   font-size: 12px;

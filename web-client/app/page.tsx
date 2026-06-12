@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -114,11 +115,21 @@ export default function Home() {
           </div>
         )}
 
-        {messages.map((m, i) => (
-          <div key={i} className={`bubble ${m.role}`}>
-            {m.content || (busy && i === messages.length - 1 ? "…" : "")}
-          </div>
-        ))}
+        {messages.map((m, i) =>
+          m.role === "assistant" ? (
+            <div key={i} className="bubble assistant markdown">
+              {m.content ? (
+                <ReactMarkdown>{m.content}</ReactMarkdown>
+              ) : busy && i === messages.length - 1 ? (
+                "…"
+              ) : null}
+            </div>
+          ) : (
+            <div key={i} className="bubble user">
+              {m.content}
+            </div>
+          ),
+        )}
 
         {toolStatus && (
           <div className="tool">
