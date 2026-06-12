@@ -36,10 +36,16 @@ class Config:
 
     @classmethod
     def from_env(cls) -> "Config":
+        # Strip whitespace from the key: a trailing newline/space (common when
+        # pasting into a dashboard env field) would make the X-Riot-Token HTTP
+        # header invalid and the request would fail before ever reaching Riot.
+        raw_key = os.getenv("RIOT_API_KEY")
+        riot_api_key = raw_key.strip() if raw_key else None
+
         return cls(
-            riot_api_key=os.getenv("RIOT_API_KEY"),
-            riot_regional_host=os.getenv("RIOT_REGIONAL_HOST", "americas"),
-            riot_platform_host=os.getenv("RIOT_PLATFORM_HOST", "na1"),
+            riot_api_key=riot_api_key,
+            riot_regional_host=os.getenv("RIOT_REGIONAL_HOST", "americas").strip(),
+            riot_platform_host=os.getenv("RIOT_PLATFORM_HOST", "na1").strip(),
             ddragon_version=os.getenv("DDRAGON_VERSION", "latest"),
             ddragon_locale=os.getenv("DDRAGON_LOCALE", "en_US"),
             cache_ttl_seconds=int(os.getenv("CACHE_TTL_SECONDS", "3600")),
