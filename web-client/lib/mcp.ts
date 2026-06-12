@@ -88,11 +88,14 @@ export async function getAnthropicTools(): Promise<Anthropic.Tool[]> {
   }));
 }
 
-/** Execute an MCP tool call and flatten its result to a string for Claude. */
+/**
+ * Execute an MCP tool call. Returns the flattened text (for Claude) plus any
+ * structured content the tool emitted (for the UI, e.g. the live-match card).
+ */
 export async function callMcpTool(
   name: string,
   input: Record<string, unknown>,
-): Promise<{ text: string; isError: boolean }> {
+): Promise<{ text: string; isError: boolean; structured?: Record<string, unknown> }> {
   const client = await getMcpClient();
   try {
     const result = await client.callTool({ name, arguments: input });
@@ -105,7 +108,11 @@ export async function callMcpTool(
       .map((c) => c.text ?? "")
       .join("\n")
       .trim();
-    return { text: text || "(tool returned no text)", isError: Boolean(result.isError) };
+    return {
+      text: text || "(tool returned no text)",
+      isError: Boolean(result.isError),
+      structured: result.structuredContent as Record<string, unknown> | undefined,
+    };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return { text: `Tool '${name}' failed: ${message}`, isError: true };

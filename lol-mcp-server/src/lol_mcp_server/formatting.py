@@ -211,6 +211,56 @@ def format_live_match(
     return "\n".join(lines)
 
 
+def build_match_data(
+    game: dict[str, Any],
+    champ_name_by_key: dict[int, str],
+    queried_puuid: str | None = None,
+    rank_by_puuid: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Structured live-match data for the UI card (parallel to format_live_match).
+
+    The client renders champion icons from its own Data Dragon maps by name, so
+    we only need names/flags here — no image URLs.
+    """
+    rank_by_puuid = rank_by_puuid or {}
+    queue_id = game.get("gameQueueConfigId")
+
+    teams_by_id: dict[int, list[dict[str, Any]]] = {}
+    for p in game.get("participants", []):
+        teams_by_id.setdefault(p.get("teamId", 0), []).append(p)
+
+    teams = []
+    for team_id in sorted(teams_by_id):
+        players = []
+        for p in teams_by_id[team_id]:
+            spells = (p.get("spell1Id"), p.get("spell2Id"))
+            players.append(
+                {
+                    "champion": champ_name_by_key.get(
+                        p.get("championId"), f"Champion {p.get('championId')}"
+                    ),
+                    "riotId": p.get("riotId") or p.get("summonerName") or "?",
+                    "isJungle": _SMITE_SPELL_ID in spells,
+                    "isYou": bool(queried_puuid and p.get("puuid") == queried_puuid),
+                    "rank": rank_by_puuid.get(p.get("puuid", "")),
+                }
+            )
+        teams.append({"side": _TEAM_LABELS.get(team_id, f"Team {team_id}"), "players": players})
+
+    bans = [
+        champ_name_by_key.get(b.get("championId"), str(b.get("championId")))
+        for b in (game.get("bannedChampions") or [])
+        if b.get("championId", -1) > 0
+    ]
+
+    return {
+        "queue": _QUEUE_NAMES.get(queue_id, f"Queue {queue_id}"),
+        "gameLengthSec": max(int(game.get("gameLength", 0)), 0),
+        "teams": teams,
+        "bans": bans,
+    }
+
+
 def format_item_info(item: dict[str, Any], version: str) -> str:
     """Render a Data Dragon item payload (enriched with build-path names)."""
     name = item.get("name", "?")

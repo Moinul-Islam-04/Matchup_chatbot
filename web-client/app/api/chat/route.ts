@@ -22,6 +22,7 @@ Guidance:
 - For "who am I against right now" style questions, use get_live_match_context.
 - Be concise and practical: lead with the answer (powerspike timing, what to build, how to trade), then a brief why.
 - Talk like a knowledgeable duo partner, not a wiki.
+- Bold the exact names of champions, items, and runes when you mention them (e.g. **Diana**, **Eclipse**, **Conqueror**) — the UI shows their icons inline, so use the precise in-game name on its own rather than burying it in a longer bolded phrase.
 
 CRITICAL — live matches have NO lane data:
 - get_live_match_context returns accurate champions and teams but Riot does NOT provide lane/role assignments. The ONLY role you can know is the jungler (the tool marks who has Smite).
@@ -94,10 +95,14 @@ export async function POST(req: Request) {
           for (const block of final.content) {
             if (block.type !== "tool_use") continue;
             send("tool", { name: block.name, input: block.input });
-            const { text, isError } = await callMcpTool(
+            const { text, isError, structured } = await callMcpTool(
               block.name,
               (block.input ?? {}) as Record<string, unknown>,
             );
+            // Forward live-match structured data to the UI for the match card.
+            if (structured?.match) {
+              send("match", structured.match);
+            }
             toolResults.push({
               type: "tool_result",
               tool_use_id: block.id,

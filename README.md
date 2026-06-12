@@ -22,13 +22,17 @@ Ask it something like:
 
 ## ✨ What it looks like
 
-> Claude narrates what it's doing, calls the data tools, and answers with real cooldowns, powerspikes, and build paths.
+> Claude narrates what it's doing, calls the data tools, and answers with real cooldowns, powerspikes, and build paths — with champion/item/rune icons rendered inline from Data Dragon.
 
 ![Graves vs Diana matchup](docs/screenshots/matchup-graves-diana.png)
 
 | Champion deep-dive | Lane matchup |
 |---|---|
 | ![Thresh kit](docs/screenshots/champion-thresh.png) | ![Caitlyn vs poke lane](docs/screenshots/poke-lane-caitlyn.png) |
+
+For live games, it renders a **match card** — both teams with champion portraits, ranks, jungler tags, and your champion highlighted — then breaks down the threats:
+
+![Live match card](docs/screenshots/live-match-card.png)
 
 ---
 

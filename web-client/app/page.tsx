@@ -1,9 +1,11 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { type Components } from "react-markdown";
+import { loadIconMaps, lookupIcon, type IconMaps } from "@/lib/ddragon";
+import { MatchCard, type MatchData } from "@/components/MatchCard";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type Msg = { role: "user" | "assistant"; content: string; match?: MatchData };
 
 const TOOL_LABELS: Record<string, string> = {
   get_champion_info: "Looking up champion data",
@@ -18,11 +20,40 @@ export default function Home() {
   const [busy, setBusy] = useState(false);
   const [toolStatus, setToolStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [icons, setIcons] = useState<IconMaps | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight);
   }, [messages, toolStatus]);
+
+  // Load champion/item/rune icon maps once from Data Dragon.
+  useEffect(() => {
+    loadIconMaps().then(setIcons).catch(() => {});
+  }, []);
+
+  // Render a small icon before any bolded champion/item/rune name.
+  const mdComponents: Components = {
+    strong({ children }) {
+      const text =
+        typeof children === "string"
+          ? children
+          : Array.isArray(children) && children.length === 1 && typeof children[0] === "string"
+            ? (children[0] as string)
+            : null;
+      const url = text ? lookupIcon(icons, text) : null;
+      if (url) {
+        return (
+          <strong className="named">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="inline-icon" src={url} alt="" />
+            {children}
+          </strong>
+        );
+      }
+      return <strong>{children}</strong>;
+    },
+  };
 
   async function send() {
     const text = input.trim();
@@ -68,14 +99,25 @@ export default function Home() {
             setToolStatus(null);
             setMessages((prev) => {
               const next = [...prev];
+              const last = next[next.length - 1];
               next[next.length - 1] = {
+                ...last,
                 role: "assistant",
-                content: next[next.length - 1].content + data.delta,
+                content: last.content + data.delta,
               };
               return next;
             });
           } else if (type === "tool") {
             setToolStatus(TOOL_LABELS[data.name] ?? `Running ${data.name}`);
+          } else if (type === "match") {
+            setMessages((prev) => {
+              const next = [...prev];
+              const last = next[next.length - 1];
+              if (last && last.role === "assistant") {
+                next[next.length - 1] = { ...last, match: data as MatchData };
+              }
+              return next;
+            });
           } else if (type === "error") {
             setError(data.message);
           }
@@ -119,12 +161,17 @@ export default function Home() {
 
         {messages.map((m, i) =>
           m.role === "assistant" ? (
-            <div key={i} className="bubble assistant markdown">
-              {m.content ? (
-                <ReactMarkdown>{m.content}</ReactMarkdown>
-              ) : busy && i === messages.length - 1 ? (
-                "…"
-              ) : null}
+            <div key={i} className="assistant-msg">
+              {m.match && <MatchCard match={m.match} icons={icons} />}
+              {(m.content || (busy && i === messages.length - 1 && !m.match)) && (
+                <div className="bubble assistant markdown">
+                  {m.content ? (
+                    <ReactMarkdown components={mdComponents}>{m.content}</ReactMarkdown>
+                  ) : (
+                    "…"
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div key={i} className="bubble user">

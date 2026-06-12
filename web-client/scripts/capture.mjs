@@ -37,27 +37,18 @@ for (const q of questions) {
   console.error(`\n→ ${q.text}`);
   await page.goto(BASE, { waitUntil: "networkidle" });
   await page.fill("textarea", q.text);
-  await page.click('.composer button');
+  await page.click(".composer button");
 
-  // Wait until the last assistant bubble stops growing for ~2s (stream done).
-  await page.waitForFunction(
-    () => {
-      const bubbles = document.querySelectorAll(".bubble.assistant");
-      const last = bubbles[bubbles.length - 1];
-      if (!last) return false;
-      const txt = last.textContent ?? "";
-      if (txt.length < 40) return false;
-      const w = window;
-      if (w.__lastLen === txt.length) {
-        w.__stableSince = w.__stableSince ?? Date.now();
-        return Date.now() - w.__stableSince > 2000;
-      }
-      w.__lastLen = txt.length;
-      w.__stableSince = Date.now();
-      return false;
-    },
-    { timeout: 120000, polling: 400 },
-  );
+  // The textarea is disabled while busy — wait for busy→true then busy→false,
+  // which is the true completion signal (text-stability falsely triggers during
+  // tool-call pauses).
+  await page
+    .waitForSelector(".composer textarea[disabled]", { timeout: 10000 })
+    .catch(() => {});
+  await page.waitForSelector(".composer textarea:not([disabled])", {
+    timeout: 150000,
+  });
+  await page.waitForTimeout(1000); // let icons finish loading
 
   // Expand the fixed-height layout so the full conversation is captured.
   await page.addStyleTag({

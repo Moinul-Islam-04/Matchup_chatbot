@@ -141,6 +141,21 @@ body {
   font-weight: 600;
 }
 
+/* Inline champion/item/rune icons next to named entities */
+.bubble.markdown strong.named {
+  white-space: nowrap;
+}
+
+.bubble.markdown .inline-icon {
+  width: 1.15em;
+  height: 1.15em;
+  border-radius: 3px;
+  vertical-align: -0.22em;
+  margin-right: 3px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
 .bubble.markdown code {
   background: #0a0e14;
   border: 1px solid var(--border);
@@ -151,6 +166,159 @@ body {
 
 .bubble.markdown a {
   color: var(--user);
+}
+
+.assistant-msg {
+  align-self: flex-start;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Live-match card */
+.mc-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  max-width: 100%;
+  font-size: 13.5px;
+}
+
+.mc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.mc-header .gold {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.mc-meta {
+  color: var(--muted);
+}
+
+.mc-teams {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.mc-team {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mc-team-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+
+.mc-team-title.blue {
+  color: #5b9bd5;
+}
+
+.mc-team-title.red {
+  color: #e06c6c;
+}
+
+.mc-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 5px;
+  border-radius: 7px;
+}
+
+.mc-player.you {
+  background: rgba(200, 170, 110, 0.12);
+  outline: 1px solid var(--accent);
+}
+
+.mc-champ-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.mc-placeholder {
+  background: #1a2230;
+}
+
+.mc-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.mc-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mc-jg {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: var(--accent);
+  color: #0a0e14;
+  border-radius: 3px;
+  padding: 0 3px;
+}
+
+.mc-id {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+
+.mc-rank {
+  font-size: 11px;
+  color: var(--accent);
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.mc-bans {
+  margin-top: 12px;
+  padding-top: 9px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.mc-bans-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-right: 4px;
+}
+
+.mc-bans .mc-champ-icon {
+  width: 20px;
+  height: 20px;
+  opacity: 0.75;
 }
 
 .tool {

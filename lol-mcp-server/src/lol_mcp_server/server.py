@@ -14,11 +14,13 @@ import asyncio
 import os
 
 from fastmcp import FastMCP
+from fastmcp.tools.tool import ToolResult
 
 from .auth import StaticTokenVerifier
 from .config import Config
 from .data_dragon import DataDragonClient
 from .formatting import (
+    build_match_data,
     format_champion_info,
     format_item_info,
     format_live_match,
@@ -126,7 +128,7 @@ async def get_rune_info(rune_name: str) -> str:
 
 
 @mcp.tool
-async def get_live_match_context(summoner_name: str, tag_line: str) -> str:
+async def get_live_match_context(summoner_name: str, tag_line: str) -> ToolResult:
     """Get the live match a player is currently in: both teams' champions,
     players, and bans (via the Riot Spectator API).
 
@@ -185,9 +187,14 @@ async def get_live_match_context(summoner_name: str, tag_line: str) -> str:
 
     await asyncio.gather(*(_fetch_rank(pid) for pid in puuids))
 
-    return format_live_match(
+    # Curated markdown for the model + structured data for the UI's match card.
+    text = format_live_match(
         game, name_by_key, queried_puuid=puuid, rank_by_puuid=rank_by_puuid
     )
+    match = build_match_data(
+        game, name_by_key, queried_puuid=puuid, rank_by_puuid=rank_by_puuid
+    )
+    return ToolResult(content=text, structured_content={"match": match})
 
 
 def main() -> None:
