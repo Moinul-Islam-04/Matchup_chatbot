@@ -1,0 +1,51 @@
+# Render Blueprint — provisions both services from this repo.
+# Render Dashboard ▸ New ▸ Blueprint ▸ connect this repo. It reads this file,
+# creates both services, and prompts for the two secrets marked `sync: false`.
+#
+# After the first deploy, regenerate your Riot key as a Personal/Production key
+# (dev keys expire every 24h) and update RIOT_API_KEY in the dashboard.
+
+services:
+  # 1. LoL MCP server — Streamable HTTP, from the Dockerfile.
+  - type: web
+    name: lol-mcp-server
+    runtime: docker
+    rootDir: lol-mcp-server
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      # Set in the dashboard (or Blueprint prompt) — never committed.
+      - key: RIOT_API_KEY
+        sync: false
+      # Bearer token guarding the HTTP endpoint. Render auto-generates a random
+      # value and shares it with the client (below) — you never see or set it.
+      - key: MCP_AUTH_TOKEN
+        generateValue: true
+      # MCP_TRANSPORT=http and HOST=0.0.0.0 come from the Dockerfile;
+      # Render injects PORT automatically.
+
+  # 2. Next.js chat client — Node web service.
+  - type: web
+    name: lol-web-client
+    runtime: node
+    rootDir: web-client
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # Auto-wired: Render injects the server's hostname; the client builds
+      # https://<host>/mcp/ from it (see lib/mcp.ts).
+      - key: LOL_MCP_HOST
+        fromService:
+          type: web
+          name: lol-mcp-server
+          property: host
+      # Auto-wired: the shared bearer token, copied from the server's generated
+      # MCP_AUTH_TOKEN. Sent as Authorization: Bearer on every MCP request.
+      - key: LOL_MCP_TOKEN
+        fromService:
+          type: web
+          name: lol-mcp-server
+          envVarKey: MCP_AUTH_TOKEN

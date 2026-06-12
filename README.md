@@ -151,19 +151,27 @@ The server supports **two transports**, chosen by the `MCP_TRANSPORT` env var, s
 | `stdio` (default) | JSON-RPC over stdin/stdout | Local dev — the client spawns the server as a child process |
 | `http` | Streamable HTTP | Deployment — server runs as its own service |
 
-**Deploy the server** (Render / Railway / Fly / any container host) from the included [Dockerfile](lol-mcp-server/Dockerfile):
-- Set `RIOT_API_KEY` as an environment variable on the host (never baked into the image).
-- The platform's injected `$PORT` is picked up automatically; the MCP endpoint is served at `/mcp/`.
+### One-click on Render (both services)
 
-**Point the client at it** — set one env var in the web client and the stdio spawn is bypassed:
+The repo ships a [`render.yaml`](render.yaml) Blueprint. In the Render dashboard: **New ▸ Blueprint ▸** connect this repo. It provisions both services and prompts for the two secrets:
+- `RIOT_API_KEY` (on the MCP server)
+- `ANTHROPIC_API_KEY` (on the client)
 
-```bash
-LOL_MCP_URL=https://your-mcp-server.onrender.com/mcp/
-```
+The client is **auto-wired** to the server — Render injects the server's hostname as `LOL_MCP_HOST` and the client builds `https://<host>/mcp/` from it. No manual URL copying.
 
-The Next.js client itself deploys anywhere that runs Node (Vercel, etc.) — once it talks to the server over HTTP it no longer needs `child_process`, so it's serverless-friendly. Set `ANTHROPIC_API_KEY` and `LOL_MCP_URL` in the host's env.
+### Manual / other hosts
 
-> The hosted HTTP server is **stateless** (no session affinity) so it scales horizontally behind a load balancer. For a public deployment, add authentication in front of it — FastMCP supports auth providers — so you're not exposing an open endpoint that consumes your Riot rate limits.
+**Server** (Render / Railway / Fly / any container host) from the [Dockerfile](lol-mcp-server/Dockerfile): set `RIOT_API_KEY`; the injected `$PORT` is picked up automatically and MCP is served at `/mcp/`.
+
+**Client** anywhere that runs Node — once it talks to the server over HTTP it no longer needs `child_process`, so it's serverless-friendly. Set `ANTHROPIC_API_KEY` plus either `LOL_MCP_URL=https://…/mcp/` (full endpoint) or `LOL_MCP_HOST=…onrender.com` (hostname only).
+
+> ⚠️ Vercel works for the client, but its Hobby functions cap at **60s** — a long Claude+tool turn on `/api/chat` can exceed that. A plain Node web service (Render/Railway) has no such limit and is the safer host for the streaming route.
+
+### Authentication
+
+The HTTP endpoint is guarded by a **bearer token** so it isn't an open server burning your Riot quota. Set `MCP_AUTH_TOKEN` on the server; the client sends it as `Authorization: Bearer …` via `LOL_MCP_TOKEN`. The Render blueprint **auto-generates** the token and shares it between the two services — you never see or set it. Auth is only enforced when `MCP_AUTH_TOKEN` is set, so local stdio runs stay unauthenticated.
+
+> The hosted HTTP server is also **stateless** (no session affinity), so it scales horizontally behind a load balancer.
 
 ---
 

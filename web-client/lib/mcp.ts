@@ -33,10 +33,20 @@ async function connect(): Promise<Client> {
     { capabilities: {} },
   );
 
-  const url = process.env.LOL_MCP_URL;
+  // Hosted server over Streamable HTTP. LOL_MCP_URL is the full endpoint; as a
+  // convenience LOL_MCP_HOST lets a host (e.g. a Render blueprint) inject just
+  // the server's hostname and we build the https URL from it.
+  const url =
+    process.env.LOL_MCP_URL ??
+    (process.env.LOL_MCP_HOST ? `https://${process.env.LOL_MCP_HOST}/mcp/` : undefined);
   if (url) {
-    // Hosted server over Streamable HTTP.
-    const transport = new StreamableHTTPClientTransport(new URL(url));
+    const token = process.env.LOL_MCP_TOKEN;
+    const transport = new StreamableHTTPClientTransport(
+      new URL(url),
+      token
+        ? { requestInit: { headers: { Authorization: `Bearer ${token}` } } }
+        : undefined,
+    );
     await client.connect(transport);
     return client;
   }

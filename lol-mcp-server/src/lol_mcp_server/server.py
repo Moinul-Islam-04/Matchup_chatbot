@@ -10,8 +10,11 @@ stay clean.
 
 from __future__ import annotations
 
+import os
+
 from fastmcp import FastMCP
 
+from .auth import StaticTokenVerifier
 from .config import Config
 from .data_dragon import DataDragonClient
 from .formatting import format_champion_info, format_live_match
@@ -22,7 +25,16 @@ configure_logging()
 log = get_logger("server")
 
 config = Config.from_env()
-mcp = FastMCP(name="lol-mcp-server")
+
+# Optional bearer-token auth for the HTTP transport. Only enforced when
+# MCP_AUTH_TOKEN is set — stdio/local runs stay open.
+_auth_token = os.getenv("MCP_AUTH_TOKEN")
+if _auth_token:
+    log.info("bearer-token auth ENABLED")
+mcp = FastMCP(
+    name="lol-mcp-server",
+    auth=StaticTokenVerifier(_auth_token) if _auth_token else None,
+)
 
 # Shared clients so the Data Dragon TTL cache and the httpx pools persist
 # across tool calls.
