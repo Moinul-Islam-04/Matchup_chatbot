@@ -22,7 +22,13 @@ const g = globalThis as unknown as McpGlobal;
 
 export function getMcpClient(): Promise<Client> {
   if (!g.lolMcpClient) {
-    g.lolMcpClient = connect();
+    // If the first connect fails (e.g. the hosted server is still cold-starting),
+    // clear the cache so the next request retries instead of reusing a rejected
+    // promise forever.
+    g.lolMcpClient = connect().catch((err) => {
+      g.lolMcpClient = undefined;
+      throw err;
+    });
   }
   return g.lolMcpClient;
 }

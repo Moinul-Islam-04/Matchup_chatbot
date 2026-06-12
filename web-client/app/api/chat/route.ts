@@ -27,6 +27,19 @@ CRITICAL — live matches have NO lane data:
 
 type ClientMessage = { role: "user" | "assistant"; content: string };
 
+/** Unwrap Node/undici "fetch failed" wrappers to show the underlying cause. */
+function describeError(err: unknown): string {
+  if (!(err instanceof Error)) return String(err);
+  const cause = (err as { cause?: unknown }).cause;
+  if (cause && typeof cause === "object") {
+    const code = "code" in cause ? String((cause as { code: unknown }).code) : "";
+    const causeMsg = cause instanceof Error ? cause.message : "";
+    const detail = [code, causeMsg].filter(Boolean).join(": ");
+    if (detail) return `${err.message} (${detail})`;
+  }
+  return err.message;
+}
+
 export async function POST(req: Request) {
   if (!process.env.ANTHROPIC_API_KEY) {
     return new Response(
@@ -93,8 +106,9 @@ export async function POST(req: Request) {
 
         send("done", {});
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        send("error", { message });
+        // "fetch failed" hides the real reason in err.cause — surface it.
+        console.error("[/api/chat] error:", err);
+        send("error", { message: describeError(err) });
       } finally {
         controller.close();
       }
