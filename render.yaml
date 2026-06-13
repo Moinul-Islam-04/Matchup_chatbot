@@ -13,6 +13,7 @@ services:
     rootDir: lol-mcp-server
     dockerfilePath: ./Dockerfile
     plan: free
+    healthCheckPath: /health
     envVars:
       # Set in the dashboard (or Blueprint prompt) — never committed.
       - key: RIOT_API_KEY
@@ -30,6 +31,7 @@ services:
     runtime: node
     rootDir: web-client
     plan: free
+    healthCheckPath: /api/health
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:

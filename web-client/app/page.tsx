@@ -32,6 +32,12 @@ export default function Home() {
     loadIconMaps().then(setIcons).catch(() => {});
   }, []);
 
+  // Pre-warm the MCP connection so a sleeping hosted server is awake before the
+  // first question. Fire-and-forget.
+  useEffect(() => {
+    fetch("/api/warm").catch(() => {});
+  }, []);
+
   // Render a small icon before any bolded champion/item/rune name.
   const mdComponents: Components = {
     strong({ children }) {

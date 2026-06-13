@@ -15,6 +15,10 @@ import os
 
 from fastmcp import FastMCP
 from fastmcp.tools.tool import ToolResult
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+
+from . import __version__
 
 from .auth import StaticTokenVerifier
 from .config import Config
@@ -195,6 +199,14 @@ async def get_live_match_context(summoner_name: str, tag_line: str) -> ToolResul
         game, name_by_key, queried_puuid=puuid, rank_by_puuid=rank_by_puuid
     )
     return ToolResult(content=text, structured_content={"match": match})
+
+
+@mcp.custom_route("/health", methods=["GET"])
+async def health(_request: Request) -> JSONResponse:
+    """Unauthenticated liveness probe — for uptime pingers (keep-alive against
+    free-tier spin-down) and platform health checks. Cheap and dependency-free.
+    """
+    return JSONResponse({"status": "ok", "service": "lol-mcp-server", "version": __version__})
 
 
 def main() -> None:

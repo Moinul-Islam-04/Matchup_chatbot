@@ -194,6 +194,19 @@ The HTTP endpoint is guarded by a **bearer token** so it isn't an open server bu
 
 > The hosted HTTP server is also **stateless** (no session affinity), so it scales horizontally behind a load balancer.
 
+### Keeping it warm (free-tier cold starts)
+
+Render free services spin down after ~15 min idle, so the first request after a nap takes ~30–60s. Two mitigations are built in:
+
+- **Health endpoints** — the server exposes `GET /health` and the client `GET /api/health` (both unauthenticated, instant 200). Render uses them as deploy health checks (`healthCheckPath` in the blueprint).
+- **Pre-warm** — the client pings the MCP server (via `/api/warm`) the moment someone loads the page, so the server is usually awake by the time they ask their first question.
+
+To eliminate cold starts entirely, point a free uptime monitor (e.g. [cron-job.org](https://cron-job.org) or UptimeRobot) at **both** health URLs every ~10 minutes:
+- `https://lol-mcp-server-xxxx.onrender.com/health`
+- `https://lol-web-client-xxxx.onrender.com/api/health`
+
+That keeps both services under the spin-down threshold so the live demo always feels instant.
+
 ---
 
 ## ⚠️ Known limitations
