@@ -1,0 +1,102 @@
+[
+  {
+    "id": "champion-powerspike",
+    "question": "When does Diana powerspike?",
+    "expectTools": ["get_champion_info"],
+    "criteria": [
+      "Identifies level 6 (her R, Moonfall) as her primary powerspike",
+      "Grounds ability/cooldown details in tool data rather than vague memory",
+      "Does not invent abilities Diana does not have"
+    ]
+  },
+  {
+    "id": "item-cost-build",
+    "question": "What does Eclipse build from and how much does it cost?",
+    "expectTools": ["get_item_info"],
+    "criteria": [
+      "States the total cost accurately (~2900g)",
+      "Lists the correct build-path components",
+      "Does not fabricate stats or cost numbers"
+    ]
+  },
+  {
+    "id": "rune-mechanic",
+    "question": "Does Conqueror work well on Graves?",
+    "expectTools": ["get_rune_info"],
+    "criteria": [
+      "Correctly notes Graves is melee-classed, so he gets full Conqueror stacks per attack",
+      "Explains the effect grounded in the rune's real description",
+      "Gives a clear yes/no recommendation"
+    ]
+  },
+  {
+    "id": "matchup-build",
+    "question": "I'm playing Graves vs Diana jungle. What should I build?",
+    "expectTools": ["get_champion_info", "get_item_info"],
+    "criteria": [
+      "Recommends magic resist / Mercury's Treads over armor because Diana deals magic damage",
+      "Item recommendations are grounded in real item data",
+      "Advice is practical and specific to the matchup"
+    ]
+  },
+  {
+    "id": "ability-cooldown",
+    "question": "What's Thresh's hook (Q) cooldown?",
+    "expectTools": ["get_champion_info"],
+    "criteria": [
+      "Gives the correct per-rank cooldown values from tool data",
+      "Does not hallucinate numbers",
+      "Is concise"
+    ]
+  },
+  {
+    "id": "unknown-champion",
+    "question": "Tell me about the champion Zglorbax.",
+    "expectTools": [],
+    "criteria": [
+      "Recognizes this is not a real champion instead of inventing one",
+      "Does not fabricate abilities or stats for a fake champion",
+      "Responds helpfully (e.g. asks for clarification or notes it's unknown)"
+    ]
+  },
+  {
+    "id": "item-typo",
+    "question": "what does serildas grudge do",
+    "expectTools": ["get_item_info"],
+    "criteria": [
+      "Resolves the typo to Serylda's Grudge",
+      "Describes its real stats/effect (armor pen, slow)",
+      "Does not claim the item doesn't exist"
+    ]
+  },
+  {
+    "id": "concise-tone",
+    "question": "quick — Ahri ult cooldown?",
+    "expectTools": ["get_champion_info"],
+    "criteria": [
+      "Leads with the cooldown numbers",
+      "Stays short (roughly one to two sentences)",
+      "Numbers are grounded in tool data"
+    ]
+  },
+  {
+    "id": "multi-tool",
+    "question": "I'm Yasuo into an AP poke mid lane. What runes and first item should I go?",
+    "expectTools": ["get_rune_info", "get_item_info"],
+    "criteria": [
+      "Recommends specific runes and an item, grounded in tool data",
+      "Advice fits the AP-poke matchup (e.g. magic resist consideration)",
+      "Coherent and practical, not generic"
+    ]
+  },
+  {
+    "id": "live-offline",
+    "question": "Is DefinitelyNotReal#0000 in a game right now?",
+    "expectTools": ["get_live_match_context"],
+    "criteria": [
+      "Gracefully reports the player is not in a live game (or not found)",
+      "Does NOT invent a fake match, champions, or lane assignments",
+      "Stays honest about the limitation"
+    ]
+  }
+]

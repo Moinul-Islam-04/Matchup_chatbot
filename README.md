@@ -210,7 +210,12 @@ The HTTP endpoint is guarded by a **bearer token** so it isn't an open server bu
 - [x] Phase 3 — Next.js chat client (Claude loop + MCP over stdio)
 - [x] Markdown rendering in chat bubbles
 - [x] Phase 4 — Server runs as a **Streamable HTTP** MCP server for cloud deployment
-- [ ] Optional `lane` hint to skip the "which lane?" step
+- [x] Item + rune grounding tools and ranked tiers in live matches
+- [x] Visual polish — inline champion/item/rune icons and a live-match card
+- [x] Bearer-token auth on the HTTP endpoint
+- [x] Response-quality eval harness (`web-client/evals`) — LLM-judged scoring of the real pipeline
+- [ ] Personalization — save your Riot ID (no retyping, auto-pull your game)
+- [ ] Reliability — `/health` + keep-alive to kill free-tier cold starts
 - [ ] Counter-stats / win-rate tool
 
 ---

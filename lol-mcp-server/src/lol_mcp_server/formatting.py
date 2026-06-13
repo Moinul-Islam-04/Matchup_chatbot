@@ -66,6 +66,21 @@ def _abilities_block(passive: dict[str, Any], spells: list[dict[str, Any]]) -> s
     return "\n".join(lines)
 
 
+# Champions that are MELEE-classed for item/rune interactions despite a long
+# basic-attack range (so an attackrange heuristic alone mislabels them). This
+# matters for effects like Conqueror that penalize ranged champions.
+_KNOWN_MELEE_LONG_RANGE = {"Graves"}
+
+
+def _attack_type(name: str, attackrange: float) -> str:
+    """Melee vs Ranged for rune/item purposes. Range cleanly separates the two
+    for almost every champion (~175 melee vs ~500+ ranged); a small exception
+    set covers melee-classed champions with deceptively long range."""
+    if name in _KNOWN_MELEE_LONG_RANGE:
+        return "Melee"
+    return "Melee" if attackrange < 350 else "Ranged"
+
+
 def _strip_tags(text: str) -> str:
     """Data Dragon descriptions embed <br>, <font>, <i> markup; flatten them."""
     import re
@@ -81,13 +96,15 @@ def format_champion_info(champ: dict[str, Any], version: str) -> str:
     tags = ", ".join(champ.get("tags", []))
     partype = champ.get("partype", "")
     blurb = _strip_tags(champ.get("blurb", ""))
+    attack_type = _attack_type(name, champ.get("stats", {}).get("attackrange", 0))
 
     ally_tips = champ.get("allytips") or []
     enemy_tips = champ.get("enemytips") or []
 
     sections = [
         f"# {name} — {title}",
-        f"**Class:** {tags}  |  **Resource:** {partype}  |  **Patch:** {version}",
+        f"**Class:** {tags}  |  **Attack type:** {attack_type}  "
+        f"|  **Resource:** {partype}  |  **Patch:** {version}",
         "",
         "## Base Stats (level 1, with per-level growth)",
         _stats_block(champ.get("stats", {})),
