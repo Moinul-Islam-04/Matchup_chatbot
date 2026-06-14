@@ -34,15 +34,24 @@ type ClientMessage = { role: "user" | "assistant"; content: string };
 
 /** Unwrap Node/undici "fetch failed" wrappers to show the underlying cause. */
 function describeError(err: unknown): string {
-  if (!(err instanceof Error)) return String(err);
-  const cause = (err as { cause?: unknown }).cause;
+  let msg = err instanceof Error ? err.message : String(err);
+  const cause = (err as { cause?: unknown })?.cause;
   if (cause && typeof cause === "object") {
     const code = "code" in cause ? String((cause as { code: unknown }).code) : "";
     const causeMsg = cause instanceof Error ? cause.message : "";
     const detail = [code, causeMsg].filter(Boolean).join(": ");
-    if (detail) return `${err.message} (${detail})`;
+    if (detail) msg = `${msg} (${detail})`;
   }
-  return err.message;
+
+  // A spun-down/unreachable MCP server returns an HTML gateway page (502/503/
+  // 504). Don't dump the HTML (it embeds a base64 font) — show a clean note.
+  if (/<!doctype|<html|\b50[234]\b|bad gateway|service unavailable|gateway time/i.test(msg)) {
+    return "The data service is waking up (free-tier cold start) or briefly unavailable. Give it ~30 seconds and try again.";
+  }
+
+  // Otherwise strip any stray markup and cap length so errors stay readable.
+  msg = msg.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  return msg.length > 300 ? `${msg.slice(0, 300)}…` : msg;
 }
 
 export async function POST(req: Request) {
